@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>悉尼歌剧院 · 团票管理</title>
+<style>
+:root{
+  --bg:#f4f6fa;--card:#fff;--line:#e4e9f0;--txt:#1e293b;--sub:#64748b;
+  --pos:#16a34a;--neg:#dc2626;--zero:#94a3b8;--brand:#2563eb;--warn:#b45309;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+  background:var(--bg);color:var(--txt);font-size:14px;-webkit-font-smoothing:antialiased}
+header{padding:14px 22px;background:#fff;border-bottom:1px solid var(--line);
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+h1{font-size:17px;margin:0;font-weight:600;letter-spacing:.3px}
+.hint{font-size:12px;color:var(--sub)}
+nav{display:flex;gap:4px;padding:10px 22px 0;background:#fff;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{border:0;background:transparent;padding:10px 16px;font-size:14px;color:var(--sub);
+  cursor:pointer;border-bottom:2px solid transparent;font-family:inherit;border-radius:6px 6px 0 0}
+.tab:hover{color:var(--txt);background:#f8fafc}
+.tab.active{color:var(--brand);border-bottom-color:var(--brand);font-weight:600}
+main{padding:18px 22px 60px;max-width:1700px;margin:0 auto}
+section{display:none}
+section.active{display:block}
+
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:18px}
+.card{background:#fff;border-radius:10px;padding:14px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card .label{font-size:12px;color:var(--sub);margin-bottom:6px}
+.card .num{font-size:26px;font-weight:700;line-height:1}
+
+.grid{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:10px;
+  overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);font-size:13px;margin-bottom:18px}
+.grid th{background:#f8fafc;text-align:left;padding:10px 12px;font-weight:600;color:#475569;
+  border-bottom:1px solid var(--line);white-space:nowrap}
+.grid td{padding:8px 12px;border-bottom:1px solid #f1f4f9;vertical-align:middle}
+.grid tbody tr:last-child td{border-bottom:0}
+.grid tbody tr:hover td{background:#fafbfe}
+.grid tr.rec-row td{background:#fffbeb}
+
+.neg{color:var(--neg);font-weight:700}
+.pos{color:var(--pos);font-weight:700}
+.zero{color:var(--zero)}
+.net{font-variant-numeric:tabular-nums}
+
+.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.t1{background:#e0edff;color:#1d4ed8}
+.t30{background:#fde8d7;color:#b45309}
+.ok{background:#dcfce7;color:#15803d}
+.warn{background:#fef3c7;color:#b45309}
+.multi{background:#ede9fe;color:#6d28d9}
+.rec{background:#fef3c7;color:#b45309}
+
+.chip{display:inline-block;padding:3px 9px;border-radius:6px;background:#f1f5f9;
+  margin:2px 4px 2px 0;font-size:12px;white-space:nowrap;line-height:1.45}
+.chip b{font-weight:700}
+.chip.neg{background:#fee2e2}
+.chip.pos{background:#dcfce7}
+.chip.rec{background:#fef9c3;border:1px solid #fde68a}
+
+.inp{border:1px solid transparent;background:transparent;padding:4px 6px;border-radius:5px;
+  font-size:13px;font-family:inherit;color:inherit;width:100%;min-width:60px}
+.inp:hover{border-color:#dbe2ec;background:#fff}
+.inp:focus{outline:none;border-color:var(--brand);background:#fff;box-shadow:0 0 0 2px #dbeafe}
+.inp.small{max-width:90px}
+.inp.tiny{max-width:60px}
+select.inp{cursor:pointer}
+
+.btn{border:1px solid var(--line);background:#fff;padding:8px 16px;border-radius:8px;cursor:pointer;
+  font-size:13px;font-family:inherit;color:var(--txt);transition:.15s}
+.btn:hover{background:#f8fafc;border-color:#cbd5e1}
+.btn.primary{background:var(--brand);color:#fff;border-color:var(--brand)}
+.btn.primary:hover{background:#1d4ed8}
+.btn.mini{padding:3px 10px;font-size:12px;border-radius:6px}
+.del{border:0;background:transparent;color:#cbd5e1;cursor:pointer;font-size:15px;padding:4px 8px;border-radius:5px}
+.del:hover{color:var(--neg);background:#fee2e2}
+
+.empty{padding:50px;text-align:center;color:var(--sub);background:#fff;border-radius:10px}
+.datecell{font-weight:600;white-space:nowrap;font-variant-numeric:tabular-nums}
+.cand{font-size:11px;color:#b45309;background:#fffbeb;padding:2px 7px;border-radius:5px;
+  display:inline-block;margin:2px 3px 2px 0}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
+.toolbar .spacer{flex:1}
+h2.sec{font-size:14px;font-weight:600;margin:22px 0 10px;color:#334155}
+h2.sec:first-child{margin-top:0}
+.tip{font-size:12px;color:#94a3b8;line-height:1.8;margin-top:12px}
+.codeline{font-size:11px;opacity:.72;font-weight:400;margin-top:2px;white-space:nowrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:#64748b;margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend .dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎭 悉尼歌剧院 · 团票管理</h1>
+  <div class="hint">每团每产品需 <b>19</b> 张成人票 · 领队票不可匀 · 1H 与 30min 不可互匀 · 同团同产品多日期时，只要其中一天 ≥19，该团保底满足</div>
+</header>
+
+<nav>
+  <button class="tab active" data-view="calendar">📅 日历看板</button>
+  <button class="tab" data-view="tours">📋 团列表</button>
+  <button class="tab" data-view="pending">⏳ 待定团</button>
+  <button class="tab" data-view="data">⚙️ 数据</button>
+</nav>
+
+<main>
+  <section id="view-calendar" class="active"></section>
+  <section id="view-tours"></section>
+  <section id="view-pending"></section>
+  <section id="view-data"></section>
+</main>
+
+<script>
+/* ============ 数据种子 ============ */
+const SEED = [
+/* ---------- 1H ---------- */
+{code:"MYO-020127A-FHYL",product:"1H",needText:"2027-01-06",date:"2027-01-06",adults:19,leaders:1,conf:"54622896",time:"11:00am"},
+{code:"MYO-020127B-FHZQ",product:"1H",needText:"2027-01-07",date:"2027-01-07",adults:19,leaders:1,conf:"54622921",time:"11:00am"},
+{code:"MYO-020127C-FHZQ",product:"1H",needText:"2027-01-05",date:"2027-01-05",adults:19,leaders:1,conf:"54623026",time:"11:00am"},
+{code:"MYO-030127-FHYL",product:"1H",needText:"2027-01-12",date:"2027-01-12",adults:19,leaders:1,conf:"54623042",time:"11:00am"},
+{code:"MYO-040127-FHZQ",product:"1H",needText:"2027-01-15",date:"2027-01-15",adults:19,leaders:1,conf:"54623088",time:"11:00am"},
+{code:"MYO-050127-FHYL",product:"1H",needText:"2027-01-14",date:"2027-01-14",adults:19,leaders:1,conf:"54623131",time:"11:00am"},
+{code:"MYO-070127A-FHZQ",product:"1H",needText:"2027-01-14",date:"2027-01-14",adults:19,leaders:1,conf:"54623144",time:"11:30am"},
+{code:"MYO-070127B-FHYL",product:"1H",needText:"2027-01-14",date:"2027-01-14",adults:19,leaders:1,conf:"54623244",time:"1:00pm"},
+{code:"MYO-090127A-FHZQ",product:"1H",needText:"2027-01-12",date:"2027-01-12",adults:19,leaders:1,conf:"54623270",time:"11:30am"},
+{code:"MYO-090129B-FHYL",product:"1H",needText:"2027-01-16",date:"2027-01-16",adults:19,leaders:1,conf:"54623287",time:"11:00am"},
+{code:"MYO-090127C-FHYL",product:"1H",needText:"2027-01-18",date:"2027-01-18",adults:19,leaders:1,conf:"54623374",time:"11:00am"},
+{code:"MYO-090127D-FHZQ",product:"1H",needText:"1月13日或1月15日或1月17日",date:"2027-01-13",adults:19,leaders:1,conf:"54623406",time:"11:30am",candidates:["2027-01-13","2027-01-15","2027-01-17"]},
+{code:"MYO-100127-FHZQ",product:"1H",needText:"2027-01-19",date:"2027-01-19",adults:19,leaders:1,conf:"54623432",time:"11:00am"},
+{code:"MYO-110127-FHYL",product:"1H",needText:"2027-01-14",date:"2027-01-14",adults:19,leaders:1,conf:"54625391",time:"9:45am"},
+{code:"MYO-140127A-FHZQ",product:"1H",needText:"2027-01-21",date:"2027-01-21",adults:19,leaders:1,conf:"54625400",time:"9:45am"},
+{code:"MYO-140127B-FHYL",product:"1H",needText:"2027-01-21",date:"2027-01-21",adults:19,leaders:1,conf:"54625419",time:"1:00pm"},
+{code:"MYO-150127A-FHYL",product:"1H",needText:"2027-01-24",date:"2027-01-24",adults:15,leaders:0,conf:"54625172",time:"11:30am"},
+{code:"MYO-150127B-FHZQ",product:"1H",needText:"2027-01-16",date:"2027-01-16",adults:20,leaders:0,conf:"54625517",time:"11:00am / 11:30am",note:"11:00am*10+11:30am*10"},
+{code:"MYO-150127C-FHZQ",product:"1H",needText:"2027-01-16",date:"2027-01-16",adults:19,leaders:1,conf:"54624594",time:"9:30am"},
+{code:"MYO-150127D-FHYL",product:"1H",needText:"2027-01-18",date:"2027-01-18",adults:19,leaders:1,conf:"54624699",time:"11:30am"},
+{code:"MYO-160127A-FHZQ",product:"1H",needText:"2027-01-21",date:"2027-01-21",adults:19,leaders:1,conf:"54624672",time:"11:00am"},
+{code:"MYO-160127B-FHZQ",product:"1H",needText:"2027-01-19",date:"2027-01-19",adults:19,leaders:1,conf:"54624722",time:"11:30am"},
+{code:"MYO-160127C-FHYL",product:"1H",needText:"2027-01-20",date:"2027-01-20",adults:19,leaders:1,conf:"54625068",time:"11:00am"},
+{code:"MYO-170127-FHZQ",product:"1H",needText:"2027-01-26",date:"2027-01-26",adults:9,leaders:0,conf:"54625099",time:"11:00am",note:"原一行 9AD+5AD 拆开"},
+{code:"MYO-170127-FHZQ",product:"1H",needText:"2027-01-26",date:"2027-01-26",adults:5,leaders:0,conf:"54625124",time:"11:30am",note:"原一行 9AD+5AD 拆开"},
+{code:"MYO-200127-FHYL",product:"1H",needText:"2027-01-21",date:"2027-01-21",adults:19,leaders:1,conf:"54625215",time:"11:30am"},
+{code:"MYO-210127A-FHYL",product:"1H",needText:"2027-01-28",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-210127B-FHZQ",product:"1H",needText:"2027-01-22",date:"2027-01-22",adults:19,leaders:1,conf:"54625555",time:"11:30am"},
+{code:"MYO-240126-FH",product:"1H",needText:"2027-01-24",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-220127A-FHZQ",product:"1H",needText:"2027-01-29",date:"2027-01-29",adults:20,leaders:0,conf:"54662121",time:"11:00am"},
+{code:"MYO-220127B-FHYL",product:"1H",needText:"2027-01-31",date:"2027-01-31",adults:29,leaders:1,conf:"54662514",time:"11:00am"},
+{code:"MYO-230127A-FHYL",product:"1H",needText:"2027-01-26",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-230127B-FHYL",product:"1H",needText:"1月28日或1月30日",date:"2027-01-30",adults:32,leaders:0,conf:"54662706",time:"11:00am",candidates:["2027-01-28","2027-01-30"]},
+{code:"MYO-230127C-FHZQ",product:"1H",needText:"1月27日或1月29日或1月31日",date:"2027-01-29",adults:12,leaders:0,conf:"54662834",time:"11:00am",candidates:["2027-01-27","2027-01-29","2027-01-31"],note:"原一行 12AD+9AD 拆开"},
+{code:"MYO-230127C-FHZQ",product:"1H",needText:"1月27日或1月29日或1月31日",date:"2027-01-29",adults:9,leaders:0,conf:"54663113",time:"9:30am",candidates:["2027-01-27","2027-01-29","2027-01-31"],note:"原一行 12AD+9AD 拆开"},
+{code:"MYO-240127B-FHZQ",product:"1H",needText:"2027-01-27",date:"2027-01-27",adults:9,leaders:0,conf:"54663256",time:"9:45am",note:"备注：团号 MYO-230127C-FHZQ-WW"},
+{code:"MYO-240127C-FHYL",product:"1H",needText:"2027-01-31",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-250127A-FHYL",product:"1H",needText:"1月26或1月28日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-01-26","2027-01-28"]},
+{code:"MYO-250127B-FHZQ",product:"1H",needText:"2027-01-28",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-270127-FHZQ",product:"1H",needText:"2027-01-28",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-280127-FHZQ",product:"1H",needText:"2027-02-04",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-290127A-FHYL",product:"1H",needText:"2027-01-30",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-290127B-FHZQ",product:"1H",needText:"2月3日或2月5日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-03","2027-02-05"]},
+{code:"MYO-290127C-FHZQ",product:"1H",needText:"2月1日或2月3日或2月5日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-01","2027-02-03","2027-02-05"]},
+{code:"MYO-290127D-FHZQ",product:"1H",needText:"1月30日或1月31日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-01-30","2027-01-31"]},
+{code:"MYO-300127-FHYL",product:"1H",needText:"2月3日或2月5日或2月7日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-03","2027-02-05","2027-02-07"]},
+{code:"MYO-310127A-FHYL",product:"1H",needText:"2027-02-09",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-310127B-FHZQ",product:"1H",needText:"2027-02-07",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-310127C-FHZQ",product:"1H",needText:"2027-02-09",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-010227A-FHZQ",product:"1H",needText:"2027-02-08",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-010227B-FHYL",product:"1H",needText:"2027-02-10",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-020227A-FHYL",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-020227B-FHZQ",product:"1H",needText:"2027-02-09",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-020227C-FHZQ",product:"1H",needText:"2027-02-09",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-020227D-FHYL",product:"1H",needText:"2月3日或2月5日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-03","2027-02-05"]},
+{code:"MYO-030227A-FHZQ",product:"1H",needText:"2027-02-13",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-030227B-FHYL",product:"1H",needText:"2月8日或2月10日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-08","2027-02-10"]},
+{code:"MYO-030227C-FHYL",product:"1H",needText:"2月8日或2月10日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-08","2027-02-10"]},
+{code:"MYO-040227A-FHYL",product:"1H",needText:"2月9日或2月11日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-09","2027-02-11"]},
+{code:"MYO-040227B-FHYL",product:"1H",needText:"2027-02-13",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-040227D-FHZQ",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-050227A-FH",product:"1H",needText:"2027-02-05",date:"2027-02-05",adults:35,leaders:0,conf:"54662194",time:"2:30pm"},
+{code:"MYO-060227A-FHZQ",product:"1H",needText:"2月11日或2月13日",date:"2027-02-11",adults:35,leaders:0,conf:"54662146",time:"1:00pm",candidates:["2027-02-11","2027-02-13"]},
+{code:"MYO-060227B-FHYL",product:"1H",needText:"2027-02-17",date:"2027-02-17",adults:35,leaders:0,conf:"54662234",time:"11:00am"},
+{code:"MYO-060227C-FHYL",product:"1H",needText:"2027-02-13",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-060227D-FHZQ",product:"1H",needText:"2月10日或2月12日或2月14日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-10","2027-02-12","2027-02-14"]},
+{code:"MYO-070227A-FHYL",product:"1H",needText:"2027-02-16",date:"2027-02-16",adults:19,leaders:0,conf:"54662650",time:"11:00am"},
+{code:"MYO-070227B-FHZQ",product:"1H",needText:"2027-02-14",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-070227C-FHYL",product:"1H",needText:"2月8或2月10日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-08","2027-02-10"]},
+{code:"MYO-070227D-FHYL",product:"1H",needText:"2027-02-16",date:"2027-02-16",adults:19,leaders:0,conf:"54662717",time:"1:00pm"},
+{code:"MYO-080227A-FHZQ",product:"1H",needText:"2027-02-19",date:"2027-02-19",adults:15,leaders:0,conf:"54663096",time:"1:45pm"},
+{code:"MYO-080227B-FHRJ",product:"1H",needText:"2027-02-17",date:"2027-02-17",adults:35,leaders:0,conf:"54662307",time:"11:30am"},
+{code:"MYO-080227C-FHYL",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227D-FHYL",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227E-FHZQ",product:"1H",needText:"2027-02-17",date:"2027-02-17",adults:19,leaders:0,conf:"54662380",time:"1:45pm"},
+{code:"MYO-080227F-FHZQ",product:"1H",needText:"2027-02-17",date:"2027-02-17",adults:19,leaders:0,conf:"54662492",time:"9:30am"},
+{code:"MYO-080227G-FHYL",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227H-FHZQ",product:"1H",needText:"2027-02-15",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227L-FHZQ",product:"1H",needText:"2027-02-15",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227M-FHYL",product:"1H",needText:"2027-02-11",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-080227P-FHZQ",product:"1H",needText:"2月12日或2月14日或2月16日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-12","2027-02-14","2027-02-16"]},
+{code:"MYO-090227A-FHZQ",product:"1H",needText:"2027-02-16",date:"2027-02-16",adults:19,leaders:0,conf:"54662825",time:"2:30pm"},
+{code:"MYO-090227B-FHYL",product:"1H",needText:"2月16日或2月18日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-16","2027-02-18"]},
+{code:"MYO-090227C-FHYL",product:"1H",needText:"2月10或2月11日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-10","2027-02-11"]},
+{code:"MYO-100227A-FHZQ",product:"1H",needText:"2027-02-17",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-100227B-FHZQ",product:"1H",needText:"2027-02-19",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-100227C-FHYL",product:"1H",needText:"2027-02-21",date:"2027-02-21",adults:19,leaders:0,conf:"54625752",time:"9:30am"},
+{code:"新增MYO-110227A-FH",product:"1H",needText:"2027-02-11",date:"2027-02-11",adults:35,leaders:0,conf:"54662022",time:"9:30am",note:"原两行 35AD 拆开"},
+{code:"新增MYO-110227A-FH",product:"1H",needText:"2027-02-11",date:"2027-02-11",adults:35,leaders:0,conf:"54661887",time:"11:30am",note:"原两行 35AD 拆开"},
+{code:"新增MYO-110227B-FH",product:"1H",needText:"2027-02-11",date:"2027-02-11",adults:35,leaders:0,conf:"54662008",time:"11:00am"},
+{code:"MYO-110227A-FHYL",product:"1H",needText:"2027-02-18",date:"2027-02-18",adults:12,leaders:0,conf:"54663002",time:"1:00pm"},
+{code:"MYO-110227B-FHYL",product:"1H",needText:"2027-02-20",date:"2027-02-20",adults:19,leaders:0,conf:"54625793",time:"11:30am"},
+{code:"MYO-110227C-FHZQ",product:"1H",needText:"2027-02-21",date:"2027-02-21",adults:15,leaders:0,conf:"54625824",time:"11:30am"},
+{code:"MYO-110227D-FHYL",product:"1H",needText:"2027-02-18",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-120227-FH",product:"1H",needText:"2027-02-12",date:"2027-02-12",adults:35,leaders:0,conf:"54662122",time:"11:30am"},
+{code:"MYO-130227A-FHZQ",product:"1H",needText:"2027-02-20",date:"2027-02-20",adults:19,leaders:0,conf:"54625847",time:"9:30am"},
+{code:"MYO-130227B-FHYL",product:"1H",needText:"2月14日或2月16日",date:null,adults:0,leaders:0,conf:"",time:"",candidates:["2027-02-14","2027-02-16"]},
+{code:"MYO-130227C-FHZQ",product:"1H",needText:"2027-02-16",date:"2027-02-16",adults:16,leaders:0,conf:"54662888",time:"11:00am"},
+{code:"MYO-140227A-FHZQ",product:"1H",needText:"2027-02-23",date:"2027-02-23",adults:19,leaders:1,conf:"54625913",time:"11:00am"},
+{code:"MYO-140227C-FHYL",product:"1H",needText:"2027-02-17",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"MYO-180227A-FHZQ",product:"1H",needText:"2027-02-25",date:"2027-02-25",adults:19,leaders:1,conf:"54625928",time:"11:00am"},
+{code:"MYO-180227B-FHYL",product:"1H",needText:"2027-02-21",date:"2027-02-21",adults:19,leaders:1,conf:"54625941",time:"9:30am"},
+{code:"MYO-180227C-FHYL",product:"1H",needText:"2027-02-25",date:"2027-02-25",adults:19,leaders:1,conf:"54635976",time:"11:30am"},
+{code:"MYO-190227-FHZQ",product:"1H",needText:"2027-02-22",date:"2027-02-22",adults:19,leaders:0,conf:"54636082",time:"11:00am"},
+{code:"MYO-200227A-FHZQ",product:"1H",needText:"2027-02-23",date:"2027-02-23",adults:19,leaders:1,conf:"54636174",time:"2:30pm"},
+{code:"MYO-200227B-FHYL",product:"1H",needText:"2027-02-24",date:"2027-02-24",adults:19,leaders:1,conf:"54636244",time:"11:00am"},
+{code:"MYO-210227-FHZQ",product:"1H",needText:"2027-03-02",date:"2027-03-02",adults:19,leaders:1,conf:"54636364",time:"11:00am"},
+{code:"MYO-250227-FHYL",product:"1H",needText:"2027-03-04",date:"2027-03-04",adults:19,leaders:1,conf:"54636429",time:"11:00am"},
+{code:"MYO-270227A-FHZQ",product:"1H",needText:"2027-03-02",date:"2027-03-02",adults:19,leaders:1,conf:"54636495",time:"11:30am"},
+{code:"MYO-270227B-FHYL",product:"1H",needText:"2027-03-05",date:"2027-03-05",adults:19,leaders:1,conf:"54636594",time:"11:00am"},
+{code:"MYO-280227-FHZQ",product:"1H",needText:"2027-03-09",date:"2027-03-09",adults:19,leaders:1,conf:"54636740",time:"11:30am"},
+{code:"新增MYO-020227-FH",product:"1H",needText:"2027-02-02",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-030227-FH",product:"1H",needText:"2027-02-03",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-040227-FH",product:"1H",needText:"2027-02-04",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-050227B-FH",product:"1H",needText:"2027-02-05",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-060227-FH",product:"1H",needText:"2027-02-06",date:null,adults:0,leaders:0,conf:"",time:""},
+{code:"新增MYO-080227-FH",product:"1H",needText:"2027-02-08",date:null,adults:0,leaders:0,conf:"",time:""},
+/* ---------- 30min ---------- */
+{code:"MYO-150127C-FHZQ",product:"30min",needText:"2027-01-16",date:"2027-01-16",adults:19,leaders:1,conf:"54624621",time:"9:15am",note:"Mandarin 30 mins Tour"},
+{code:"MYO-240127A-FHYL",product:"30min",needText:"2027-02-02",date:"2027-02-02",adults:20,leaders:0,conf:"54662043",time:"1:15pm"},
+{code:"MYO-300127-FHYL",product:"30min",needText:"2月3日或2月5日或2月7日",date:"2027-02-05",adults:20,leaders:0,conf:"54662316",time:"1:15pm",candidates:["2027-02-03","2027-02-05","2027-02-07"]},
+{code:"MYO-020227E-FHZQ",product:"30min",needText:"2027-02-12",date:"2027-02-12",adults:46,leaders:0,conf:"54662417",time:"1:30pm"},
+{code:"MYO-040227C-FHZQ",product:"30min",needText:"2027-02-11",date:"2027-02-11",adults:6,leaders:0,conf:"54663278",time:"1:15pm"},
+{code:"MYO-060227A-FHZQ",product:"30min",needText:"2027-02-13",date:"2027-02-13",adults:46,leaders:0,conf:"54662495",time:"11:15am"},
+{code:"MYO-070227D-FHYL",product:"30min",needText:"2027-02-16",date:"2027-02-16",adults:46,leaders:0,conf:"54662631",time:"12:00pm"},
+{code:"MYO-080227A-FHZQ",product:"30min",needText:"2027-02-19",date:"2027-02-19",adults:46,leaders:0,conf:"54662764",time:"2:30pm"},
+{code:"MYO-080227E-FHZQ",product:"30min",needText:"2027-02-17",date:"2027-02-17",adults:46,leaders:0,conf:"54662680",time:"4:30pm"},
+{code:"MYO-080227P-FHZQ",product:"30min",needText:"2月12日或2月14日或2月16日",date:"2027-02-14",adults:46,leaders:0,conf:"54662566",time:"10:00am",candidates:["2027-02-12","2027-02-14","2027-02-16"]},
+{code:"MYO-090227B-FHYL",product:"30min",needText:"2月16日或2月18日",date:"2027-02-18",adults:20,leaders:0,conf:"54662811",time:"9:15am",candidates:["2027-02-16","2027-02-18"]},
+{code:"MYO-120227-FHZQ",product:"30min",needText:"2027-02-19",date:"2027-02-19",adults:16,leaders:0,conf:"54662911",time:"3:30pm"},
+{code:"MYO-130227D-FHYL",product:"30min",needText:"2月18或2月20日",date:"2027-02-18",adults:6,leaders:0,conf:"54663139",time:"10:15am",candidates:["2027-02-18","2027-02-20"]},
+{code:"MYO-130227E-FHZQ",product:"30min",needText:"2月17或2月19日或2月21日",date:"2027-02-20",adults:11,leaders:0,conf:"54662968",time:"4:30pm",candidates:["2027-02-17","2027-02-19","2027-02-21"],note:"没订到21号，暂订了20号"},
+];
+
+/* ============ 状态 ============ */
+const STORAGE_KEY = 'sydney-opera-tour-mgr-v4';
+const DEMAND = 19;
+let state = { records: [], nextId: 1, sortBy: 'codeDate' };
+
+function load(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw){
+      const d = JSON.parse(raw);
+      if (d && Array.isArray(d.records)){
+        state = d;
+        if (!state.sortBy) state.sortBy = 'codeDate';
+        state.records.forEach(r=>{ if (r.needText === undefined) r.needText = r.date || r.needed || ''; });
+        return;
+      }
+    }
+  }catch(e){}
+  reset();
+}
+function reset(){
+  state = { records: SEED.map((r,i)=>({ ...r, id:i+1 })), nextId: SEED.length+1, sortBy:'codeDate' };
+  save();
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){}
+}
+
+/* ============ 工具 ============ */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(iso){
+  if(!iso) return '—';
+  const p = iso.split('-');
+  return parseInt(p[1]) + '月' + parseInt(p[2]) + '日';
+}
+function netClass(n){ return n<0?'neg':n>0?'pos':'zero'; }
+
+/* 从团号解析出发日期：MYO-ddmmyyyy */
+function parseTourCodeDate(code){
+  if (!code) return null;
+  const m = String(code).match(/MYO-(\d{2})(\d{2})(\d{2})/);
+  if (!m) return null;
+  const dd = m[1], mm = m[2], yy = m[3];
+  const d = parseInt(dd), mo = parseInt(mm);
+  if (d < 1 || d > 31 || mo < 1 || mo > 12) return null;
+  return '20' + yy + '-' + mm + '-' + dd;
+}
+
+/* 解析“需要日期”文本为候选日期数组 */
+function parseNeedDates(text){
+  if (!text) return [];
+  const s = String(text).trim();
+  const out = [];
+  let re = /(\d{4}-\d{2}-\d{2})/g, m;
+  while ((m = re.exec(s))) out.push(m[1]);
+  re = /(\d{1,2})\s*月\s*(\d{1,2})\s*日?/g;
+  while ((m = re.exec(s))){
+    const mm = String(parseInt(m[1])).padStart(2,'0');
+    const dd = String(parseInt(m[2])).padStart(2,'0');
+    out.push('2027-' + mm + '-' + dd);
+  }
+  return [...new Set(out)];
+}
+
+function earliestNeedDate(r){
+  const dates = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+  if (!dates.length) return null;
+  return dates.slice().sort()[0];
+}
+
+/* 团级保底状态 */
+function buildGroupStatus(){
+  const map = new Map();
+  for (const r of state.records){
+    if (!r.date) continue;
+    const key = r.code + '|' + r.product;
+    if (!map.has(key)) map.set(key, { code:r.code, product:r.product, dates:new Map() });
+    const g = map.get(key);
+    g.dates.set(r.date, (g.dates.get(r.date)||0) + (r.adults||0));
+  }
+  const status = new Map();
+  for (const [key, g] of map){
+    const arr = [...g.dates.entries()].map(([date, adults])=>({ date, adults }));
+    const max = Math.max(...arr.map(d=>d.adults));
+    status.set(key, {
+      code:g.code, product:g.product, dates:arr, maxAdults:max,
+      satisfied: max >= DEMAND,
+      multiDate: arr.length > 1,
+    });
+  }
+  return status;
+}
+
+/* ============ 推荐算法 ============
+ * 对每个“有多个候选日期”的待定团，推荐一个日期：
+ *  1. 若某个候选日期该产品的净差 > 0 → 选净差最大的那天（余票最多）
+ *  2. 若都 ≤ 0 → 选当前团数最少的候选日期（均衡）
+ *  3. 迭代分配：每推荐一个团就更新该日期的净差和团数，避免扎堆
+ *  4. 单候选日期的团不参与推荐
+ */
+function computeRecommendations(actualNet, actualCount){
+  const pending = state.records.filter(r => !r.date);
+  const multiCand = [];
+  for (const r of pending){
+    const dates = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+    if (dates.length > 1) multiCand.push({ r, dates: dates.slice().sort() });
+  }
+  // 按最早候选日期排序，保证稳定
+  multiCand.sort((a, b) => {
+    if (a.dates[0] !== b.dates[0]) return a.dates[0] < b.dates[0] ? -1 : 1;
+    return String(a.r.code).localeCompare(String(b.r.code));
+  });
+
+  const runNet = new Map(actualNet);
+  const runCount = new Map(actualCount);
+  const recs = new Map(); // recordId -> {date, type, net, count}
+
+  for (const { r, dates } of multiCand){
+    const product = r.product;
+    let best = null;
+
+    // 优先：净差 > 0，取最大；相同时取团数少的
+    for (const d of dates){
+      const key = d + '||' + product;
+      const net = runNet.get(key) || 0;
+      const cnt = runCount.get(key) || 0;
+      if (net > 0){
+        if (!best || net > best.net || (net === best.net && cnt < best.count)){
+          best = { date: d, net, count: cnt, type: 'surplus' };
+        }
+      }
+    }
+
+    // 其次：团数最少
+    if (!best){
+      for (const d of dates){
+        const key = d + '||' + product;
+        const cnt = runCount.get(key) || 0;
+        const net = runNet.get(key) || 0;
+        if (!best || cnt < best.count || (cnt === best.count && d < best.date)){
+          best = { date: d, net, count: cnt, type: 'balance' };
+        }
+      }
+    }
+
+    if (best){
+      recs.set(r.id, best);
+      const key = best.date + '||' + product;
+      runCount.set(key, (runCount.get(key)||0) + 1);
+      runNet.set(key, (runNet.get(key)||0) - DEMAND);
+    }
+  }
+  return recs;
+}
+
+/* ============ 日历看板 ============ */
+function renderCalendar(){
+  const el = document.getElementById('view-calendar');
+  const groupStatus = buildGroupStatus();
+
+  // 实际预订分组：日期 + 产品，组内按团号聚合
+  const map = new Map();
+  for (const r of state.records){
+    if (!r.date) continue;
+    const key = r.date + '||' + r.product;
+    if (!map.has(key)) map.set(key, { date:r.date, product:r.product, byCode:new Map() });
+    const g = map.get(key);
+    if (!g.byCode.has(r.code)) g.byCode.set(r.code, []);
+    g.byCode.get(r.code).push(r);
+  }
+  const groups = [...map.values()].sort((a,b)=>{
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.product.localeCompare(b.product);
+  });
+
+  let short1=0, sur1=0, short30=0, sur30=0, totalTours=0;
+  for (const g of groups){
+    const tourCount = g.byCode.size;
+    const demand = tourCount * DEMAND;
+    const have = [...g.byCode.values()].flat().reduce((s,r)=>s+(r.adults||0),0);
+    const net = have - demand;
+    totalTours += tourCount;
+    if (g.product === '1H'){ net<0 ? short1 += -net : sur1 += net; }
+    else { net<0 ? short30 += -net : sur30 += net; }
+  }
+
+  let html = `
+    <div class="cards">
+      <div class="card"><div class="label">已定团总数（唯一团号）</div><div class="num">${totalTours}</div></div>
+      <div class="card"><div class="label">1H 缺口</div><div class="num neg">${short1}</div></div>
+      <div class="card"><div class="label">1H 可匀余票</div><div class="num pos">${sur1}</div></div>
+      <div class="card"><div class="label">30min 缺口</div><div class="num neg">${short30}</div></div>
+      <div class="card"><div class="label">30min 可匀余票</div><div class="num pos">${sur30}</div></div>
+    </div>
+    <h2 class="sec">📌 实际预订日历（按预定日期）</h2>
+    <table class="grid">
+      <thead><tr>
+        <th style="width:90px">日期</th><th style="width:70px">产品</th>
+        <th style="width:70px">团数</th><th style="width:70px">需求</th>
+        <th style="width:70px">已拿</th><th style="width:70px">净差</th>
+        <th style="min-width:340px">团号明细（括号内为成人票数相对19的差；多确认号会展开）</th>
+        <th style="width:120px">团级保底</th>
+      </tr></thead><tbody>`;
+
+  if (!groups.length){
+    html += `<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8">暂无已定日期的团</td></tr>`;
+  }
+
+  for (const g of groups){
+    const tourCount = g.byCode.size;
+    const demand = tourCount * DEMAND;
+    const have = [...g.byCode.values()].flat().reduce((s,r)=>s+(r.adults||0),0);
+    const net = have - demand;
+
+    const chips = [...g.byCode.entries()]
+      .sort((a,b)=>a[0].localeCompare(b[0]))
+      .map(([code, recs])=>{
+        const total = recs.reduce((s,r)=>s+(r.adults||0),0);
+        const n = total - DEMAND;
+        const c = n<0?'neg':n>0?'pos':'';
+        const extra = n!==0 ? ` <b>(${n>0?'+':''}${n})</b>` : '';
+        if (recs.length === 1){
+          const r = recs[0];
+          const detail = (r.time||r.conf) ? `<div class="codeline">${esc(r.time||'')}${r.time&&r.conf?' · ':''}${esc(r.conf||'')}</div>` : '';
+          return `<span class="chip ${c}" style="display:inline-block;vertical-align:top">${esc(code)} · ${total}${extra}${detail}</span>`;
+        }
+        const details = recs
+          .slice()
+          .sort((a,b)=>(a.time||'').localeCompare(b.time||''))
+          .map(r=>`${esc(r.time||'')} · ${r.adults||0}AD${r.conf?' · '+esc(r.conf):''}`)
+          .join(' ｜ ');
+        return `<div class="chip ${c}" style="display:block;width:fit-content;margin-bottom:4px"><b>${esc(code)}</b> · 合计 ${total}${extra}<div class="codeline">${details}</div></div>`;
+      }).join('');
+
+    let okCount=0, warnCount=0, multiCount=0;
+    for (const code of g.byCode.keys()){
+      const st = groupStatus.get(code + '|' + g.product);
+      if (st && st.satisfied) okCount++;
+      else warnCount++;
+      if (st && st.multiDate) multiCount++;
+    }
+    let statusHtml = '';
+    if (okCount) statusHtml += `<span class="tag ok">已满足 ${okCount}</span> `;
+    if (warnCount) statusHtml += `<span class="tag warn">待补 ${warnCount}</span> `;
+    if (multiCount) statusHtml += `<span class="tag multi">多日期 ${multiCount}</span>`;
+
+    html += `<tr>
+      <td class="datecell">${fmtDate(g.date)}</td>
+      <td><span class="tag ${g.product==='1H'?'t1':'t30'}">${g.product}</span></td>
+      <td>${tourCount}</td>
+      <td>${demand}</td>
+      <td>${have}</td>
+      <td class="net ${netClass(net)}">${net>0?'+':''}${net}</td>
+      <td>${chips}</td>
+      <td>${statusHtml||'—'}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+
+  // 实际净差/团数 map
+  const actualNet = new Map();
+  const actualCount = new Map();
+  for (const g of groups){
+    const demand = g.byCode.size * DEMAND;
+    const have = [...g.byCode.values()].flat().reduce((s,r)=>s+(r.adults||0),0);
+    const key = g.date + '||' + g.product;
+    actualNet.set(key, have - demand);
+    actualCount.set(key, g.byCode.size);
+  }
+
+  // 计算推荐
+  const recommendations = computeRecommendations(actualNet, actualCount);
+
+  // 统计每个日期被推荐了多少团
+  const recCountByKey = new Map();
+  for (const [recId, rec] of recommendations){
+    const recRecord = state.records.find(r => r.id === recId);
+    if (!recRecord) continue;
+    const key = rec.date + '||' + recRecord.product;
+    recCountByKey.set(key, (recCountByKey.get(key)||0) + 1);
+  }
+
+  // 候选日期影响区
+  const candMap = new Map();
+  for (const r of state.records){
+    if (r.date) continue;
+    const dates = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+    if (!dates.length) continue;
+    for (const d of dates){
+      const key = d + '||' + r.product;
+      if (!candMap.has(key)) candMap.set(key, { date:d, product:r.product, byCode:new Map() });
+      const g = candMap.get(key);
+      if (!g.byCode.has(r.code)) g.byCode.set(r.code, []);
+      g.byCode.get(r.code).push(r);
+    }
+  }
+  const candGroups = [...candMap.values()].sort((a,b)=>{
+    if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+    return a.product.localeCompare(b.product);
+  });
+
+  // 推荐汇总：按日期列出推荐团
+  const recByDate = new Map(); // key -> [{code, type}]
+  for (const [recId, rec] of recommendations){
+    const r = state.records.find(x => x.id === recId);
+    if (!r) continue;
+    const key = rec.date + '||' + r.product;
+    if (!recByDate.has(key)) recByDate.set(key, []);
+    recByDate.get(key).push({ code:r.code, type:rec.type, needText:r.needText });
+  }
+
+  html += `<h2 class="sec">🔮 候选日期影响（未确定团，按候选日期模拟）</h2>
+    <div class="legend">
+      <span><span class="dot" style="background:#fef3c7"></span>推荐日期行</span>
+      <span><b style="color:#b45309">★</b> 推荐该团选这天</span>
+      <span><b>余票</b> = 该日期已有可匀成人票 &gt; 0，优先推荐</span>
+      <span><b>均衡</b> = 所有候选日都没余票，推荐团数最少的那天</span>
+    </div>
+    <p class="tip" style="margin-top:0;margin-bottom:10px">
+      推荐规则：先看候选日期里哪天该产品还有可匀余票，推荐余票最多的那天；如果都没有余票，就推荐当前团数最少的候选日期，让每日团量尽量平均。每个团只会推荐一个日期，推荐结果会互相影响，避免扎堆。只有一个候选日期的团不参与推荐。
+    </p>
+    <table class="grid">
+      <thead><tr>
+        <th style="width:90px">候选日期</th><th style="width:70px">产品</th>
+        <th style="width:80px">候选团数</th>
+        <th style="width:110px">当前实际净差</th>
+        <th style="width:120px">若选这天新增需求</th>
+        <th style="width:100px">选后净差</th>
+        <th style="width:170px">推荐</th>
+        <th>候选团号</th>
+      </tr></thead><tbody>`;
+
+  if (!candGroups.length){
+    html += `<tr><td colspan="8" style="text-align:center;padding:30px;color:#94a3b8">没有待定候选日期</td></tr>`;
+  }
+  for (const g of candGroups){
+    const key = g.date + '||' + g.product;
+    const tourCount = g.byCode.size;
+    const addDemand = tourCount * DEMAND;
+    const baseNet = actualNet.get(key);
+    const baseNetShow = (baseNet === undefined) ? '—' : ((baseNet>0?'+':'') + baseNet);
+    const afterNet = (baseNet === undefined ? -addDemand : baseNet - addDemand);
+
+    const recList = recByDate.get(key) || [];
+    const isRecRow = recList.length > 0;
+    const recCell = isRecRow
+      ? recList.map(x=>`<span class="chip rec" style="margin:1px 4px 1px 0">★ ${esc(x.code)}<span style="color:#94a3b8;margin-left:4px">${x.type==='surplus'?'余票':'均衡'}</span></span>`).join('')
+      : '<span style="color:#cbd5e1">—</span>';
+
+    const chips = [...g.byCode.entries()]
+      .sort((a,b)=>a[0].localeCompare(b[0]))
+      .map(([code, recs])=>{
+        const r0 = recs[0];
+        const need = r0.needText ? ` · ${esc(r0.needText)}` : '';
+        const isRec = recs.some(rec => {
+          const recInfo = recommendations.get(rec.id);
+          return recInfo && recInfo.date === g.date;
+        });
+        const star = isRec ? ' <b style="color:#b45309">★</b>' : '';
+        const cls = isRec ? 'chip rec' : 'chip';
+        return `<span class="${cls}">${esc(code)}${star}${need}</span>`;
+      }).join('');
+
+    html += `<tr class="${isRecRow?'rec-row':''}">
+      <td class="datecell">${fmtDate(g.date)}</td>
+      <td><span class="tag ${g.product==='1H'?'t1':'t30'}">${g.product}</span></td>
+      <td>${tourCount}</td>
+      <td class="net ${baseNet===undefined?'zero':netClass(baseNet)}">${baseNetShow}</td>
+      <td>+${addDemand}</td>
+      <td class="net ${netClass(afterNet)}">${afterNet>0?'+':''}${afterNet}</td>
+      <td>${recCell}</td>
+      <td>${chips}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+
+  html += `<p class="tip">
+    · 净差 = 已拿成人票 − 需求（唯一团号数 × 19）。<b>正数</b>可匀，<b>负数</b>缺口。<br>
+    · 领队票（TL）不参与计算；1H 与 30min 不可互匀。<br>
+    · 团级保底：同一个团同一个产品，只要有一个日期的成人票合计 ≥ 19，就标记为“已满足”；<br>
+    &nbsp;&nbsp;如果该团该产品出现在多个日期，会标记“多日期”，其中一个日期 ≥19 时，另一个日期的票可考虑匀出。<br>
+    · 候选日期影响区只做模拟，不会改变实际净差。
+  </p>`;
+
+  el.innerHTML = html;
+}
+
+/* ============ 团列表 ============ */
+function renderTours(){
+  const el = document.getElementById('view-tours');
+  const sortBy = state.sortBy || 'codeDate';
+
+  const rows = [...state.records].sort((a,b)=>{
+    let av, bv;
+    if (sortBy === 'codeDate'){ av = parseTourCodeDate(a.code); bv = parseTourCodeDate(b.code); }
+    else if (sortBy === 'needDate'){ av = earliestNeedDate(a); bv = earliestNeedDate(b); }
+    else if (sortBy === 'bookDate'){ av = a.date; bv = b.date; }
+    else { return String(a.code).localeCompare(String(b.code)) || (a.product||'').localeCompare(b.product||''); }
+    if (!av && !bv) return String(a.code).localeCompare(String(b.code));
+    if (!av) return 1;
+    if (!bv) return -1;
+    if (av !== bv) return av < bv ? -1 : 1;
+    const c = String(a.code).localeCompare(String(b.code));
+    if (c) return c;
+    return (a.product||'').localeCompare(b.product||'');
+  });
+
+  let html = `<div class="toolbar">
+      <button class="btn primary" id="addRow">+ 新增团</button>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#475569">
+        排序：
+        <select id="sortSel" class="inp" style="width:auto;min-width:180px;background:#fff;border-color:#dbe2ec">
+          <option value="codeDate" ${sortBy==='codeDate'?'selected':''}>按团号日期（MYO-ddmmyyyy）</option>
+          <option value="needDate" ${sortBy==='needDate'?'selected':''}>按需要日期</option>
+          <option value="bookDate" ${sortBy==='bookDate'?'selected':''}>按预定日期</option>
+          <option value="code" ${sortBy==='code'?'selected':''}>按团号字母</option>
+        </select>
+      </label>
+      <span class="hint">直接点单元格即可修改，改动会自动保存到浏览器</span>
+    </div>
+    <table class="grid">
+    <thead><tr>
+      <th style="width:120px">团号日期</th>
+      <th style="min-width:170px">团号</th>
+      <th style="width:80px">产品</th>
+      <th style="min-width:160px">需要日期</th>
+      <th style="width:130px">预定日期</th>
+      <th style="width:80px">成人票</th>
+      <th style="width:60px">领队</th>
+      <th style="width:60px">净差</th>
+      <th style="min-width:120px">确认号</th>
+      <th style="width:110px">时间</th>
+      <th style="min-width:150px">备注</th>
+      <th style="width:44px"></th>
+    </tr></thead><tbody>`;
+
+  for (const r of rows){
+    const net = r.date ? (r.adults||0) - DEMAND : null;
+    const cands = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+    const candHint = cands.length > 1 ? `<div style="font-size:11px;color:#b45309;margin-top:3px">候选：${cands.map(fmtDate).join(' / ')}</div>` : '';
+    const codeDate = parseTourCodeDate(r.code);
+
+    html += `<tr data-id="${r.id}">
+      <td class="datecell">${codeDate ? fmtDate(codeDate) : '—'}</td>
+      <td><input class="inp" data-f="code" value="${esc(r.code)}"></td>
+      <td><select class="inp" data-f="product">
+        <option ${r.product==='1H'?'selected':''}>1H</option>
+        <option ${r.product==='30min'?'selected':''}>30min</option>
+      </select></td>
+      <td>
+        <input class="inp" data-f="needText" value="${esc(r.needText||'')}" placeholder="如 2月10日或2月12日">
+        ${candHint}
+      </td>
+      <td><input type="date" class="inp" data-f="date" value="${r.date||''}"></td>
+      <td><input type="number" class="inp small" data-f="adults" value="${r.adults||0}" min="0"></td>
+      <td><input type="number" class="inp tiny" data-f="leaders" value="${r.leaders||0}" min="0"></td>
+      <td class="net ${net===null?'zero':netClass(net)}">${net===null?'—':((net>0?'+':'')+net)}</td>
+      <td><input class="inp" data-f="conf" value="${esc(r.conf||'')}"></td>
+      <td><input class="inp small" data-f="time" value="${esc(r.time||'')}"></td>
+      <td><input class="inp" data-f="note" value="${esc(r.note||'')}"></td>
+      <td><button class="del" title="删除">✕</button></td>
+    </tr>`;
+  }
+  html += `</tbody></table>`;
+  el.innerHTML = html;
+
+  el.querySelector('#addRow').addEventListener('click', ()=>{
+    state.records.push({ id: state.nextId++, code:"新团号", product:"1H", needText:"", date:null, adults:19, leaders:1, conf:"", time:"", note:"", candidates:[] });
+    save(); renderTours();
+  });
+
+  el.querySelector('#sortSel').addEventListener('change', e=>{
+    state.sortBy = e.target.value;
+    save(); renderTours();
+  });
+
+  el.addEventListener('change', e=>{
+    const inp = e.target.closest('input,select');
+    if (!inp) return;
+    const tr = inp.closest('tr');
+    const id = +tr.dataset.id;
+    const rec = state.records.find(r=>r.id===id);
+    if (!rec) return;
+    const f = inp.dataset.f;
+    let v = inp.value;
+    if (f==='adults' || f==='leaders') v = Math.max(0, parseInt(v)||0);
+    if (f==='date' && !v) v = null;
+    rec[f] = v;
+    if (f==='needText') rec.candidates = parseNeedDates(v);
+    save(); renderTours();
+  });
+
+  el.addEventListener('click', e=>{
+    if (!e.target.classList.contains('del')) return;
+    const tr = e.target.closest('tr');
+    const id = +tr.dataset.id;
+    if (!confirm('确定删除该团？')) return;
+    state.records = state.records.filter(r=>r.id!==id);
+    save(); renderTours();
+  });
+}
+
+/* ============ 待定团 ============ */
+function renderPending(){
+  const el = document.getElementById('view-pending');
+  const pend = state.records.filter(r=>!r.date)
+    .sort((a,b)=>{
+      const ad = earliestNeedDate(a) || '9999';
+      const bd = earliestNeedDate(b) || '9999';
+      if (ad !== bd) return ad < bd ? -1 : 1;
+      return String(a.code).localeCompare(String(b.code));
+    });
+
+  const candCount = {};
+  for (const r of pend){
+    const dates = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+    for (const c of dates) candCount[c] = (candCount[c]||0) + 1;
+  }
+  const candRows = Object.entries(candCount).sort((a,b)=>a[0]<b[0]?-1:1);
+
+  let html = `
+    <div class="cards">
+      <div class="card"><div class="label">待定团数</div><div class="num">${pend.length}</div></div>
+      <div class="card"><div class="label">待定潜在需求</div><div class="num">${pend.length * DEMAND}</div></div>
+      <div class="card"><div class="label">有多个候选日期的团</div><div class="num">${pend.filter(r=>{
+        const d=(r.candidates&&r.candidates.length)?r.candidates:parseNeedDates(r.needText);
+        return d.length>1;
+      }).length}</div></div>
+    </div>`;
+
+  if (candRows.length){
+    html += `<div style="background:#fff;border-radius:10px;padding:14px 16px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+      <div style="font-size:12px;color:#64748b;margin-bottom:8px">候选日期分布（如果所有待定团都选这一天，当天会新增多少需求）</div>
+      ${candRows.map(([d,n])=>`<span class="cand">${fmtDate(d)} · ${n}团 · +${n*DEMAND}张</span>`).join('')}
+    </div>`;
+  }
+
+  html += `<table class="grid">
+    <thead><tr>
+      <th style="width:120px">团号日期</th>
+      <th style="min-width:180px">团号</th>
+      <th style="width:80px">产品</th>
+      <th style="min-width:170px">需要日期</th>
+      <th style="min-width:170px">候选日期</th>
+      <th style="width:80px">需求</th>
+      <th style="min-width:170px">备注</th>
+    </tr></thead><tbody>`;
+
+  if (!pend.length){
+    html += `<tr><td colspan="7" style="text-align:center;padding:40px;color:#94a3b8">没有待定团 🎉</td></tr>`;
+  }
+  for (const r of pend){
+    const dates = (r.candidates && r.candidates.length) ? r.candidates : parseNeedDates(r.needText);
+    const cand = dates.length
+      ? dates.map(c=>`<span class="cand">${fmtDate(c)}</span>`).join('')
+      : '<span style="color:#cbd5e1">—</span>';
+    const codeDate = parseTourCodeDate(r.code);
+    html += `<tr>
+      <td class="datecell">${codeDate ? fmtDate(codeDate) : '—'}</td>
+      <td><b>${esc(r.code)}</b></td>
+      <td><span class="tag ${r.product==='1H'?'t1':'t30'}">${r.product}</span></td>
+      <td>${esc(r.needText||'')}</td>
+      <td>${cand}</td>
+      <td>${DEMAND}</td>
+      <td style="color:#64748b">${esc(r.note||'')}</td>
+    </tr>`;
+  }
+  html += `</tbody></table>
+    <p class="tip">
+      待定团确定日期后，请在「团列表」里填入「预定日期」和成人票数，系统会自动计入日历看板。
+    </p>`;
+  el.innerHTML = html;
+}
+
+/* ============ 数据管理 ============ */
+function renderData(){
+  const el = document.getElementById('view-data');
+  const total = state.records.length;
+  const done = state.records.filter(r=>r.date).length;
+  const uniqueCodes = new Set(state.records.map(r=>r.code)).size;
+  el.innerHTML = `
+    <div class="cards">
+      <div class="card"><div class="label">总记录数</div><div class="num">${total}</div></div>
+      <div class="card"><div class="label">唯一团号数</div><div class="num">${uniqueCodes}</div></div>
+      <div class="card"><div class="label">已定日期记录</div><div class="num">${done}</div></div>
+      <div class="card"><div class="label">待定记录</div><div class="num">${total-done}</div></div>
+    </div>
+    <div class="toolbar">
+      <button class="btn primary" id="exportBtn">⬇ 导出 JSON 备份</button>
+      <button class="btn" id="importBtn">⬆ 导入 JSON</button>
+      <input type="file" id="fileInput" accept=".json" hidden>
+      <span class="spacer"></span>
+      <button class="btn" id="resetBtn" style="color:#dc2626">↺ 恢复初始数据</button>
+    </div>
+    <p class="tip">
+      数据保存在你当前浏览器的 localStorage 里。<br>
+      换电脑、换浏览器或清理缓存前，请先「导出 JSON 备份」。<br>
+      恢复初始数据会覆盖当前所有修改。<br>
+      一个团如果有多条确认号（不同时间/不同票数），这里是多条记录，但日历里会合并到同一个团号下显示。
+    </p>`;
+
+  el.querySelector('#exportBtn').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = '悉尼歌剧院团票_' + new Date().toISOString().slice(0,10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  el.querySelector('#importBtn').addEventListener('click', ()=> el.querySelector('#fileInput').click());
+  el.querySelector('#fileInput').addEventListener('change', e=>{
+    const f = e.target.files[0];
+    if (!f) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      try{
+        const d = JSON.parse(ev.target.result);
+        if (!d || !Array.isArray(d.records)) throw new Error('格式不对');
+        state = d;
+        if (!state.sortBy) state.sortBy = 'codeDate';
+        if (!state.nextId) state.nextId = Math.max(...state.records.map(r=>r.id||0)) + 1;
+        state.records.forEach(r=>{ if (r.needText === undefined) r.needText = r.date || r.needed || ''; });
+        save(); renderAll();
+        alert('导入成功，共 ' + state.records.length + ' 条记录');
+      }catch(err){ alert('导入失败：' + err.message); }
+    };
+    reader.readAsText(f);
+    e.target.value = '';
+  });
+  el.querySelector('#resetBtn').addEventListener('click', ()=>{
+    if (!confirm('确定恢复到初始数据？当前所有修改会丢失。')) return;
+    reset(); renderAll();
+  });
+}
+
+/* ============ 视图切换 ============ */
+function renderAll(){
+  renderCalendar();
+  renderTours();
+  renderPending();
+  renderData();
+}
+
+document.querySelectorAll('.tab').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+    document.querySelectorAll('section').forEach(s=>s.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('view-' + btn.dataset.view).classList.add('active');
+  });
+});
+
+/* ============ 启动 ============ */
+load();
+renderAll();
+</script>
+</body>
+</html>
